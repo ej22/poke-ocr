@@ -19,7 +19,7 @@ def main() -> int:
                 continue
             try:
                 if "tmp_path" in inspect.signature(function).parameters:
-                    with tempfile.TemporaryDirectory() as directory:
+                    with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as directory:
                         function(Path(directory))
                 else:
                     function()

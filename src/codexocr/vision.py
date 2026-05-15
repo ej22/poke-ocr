@@ -43,7 +43,7 @@ def analyze_frame_data_url(data_url: str) -> VisionResult:
     bounds = _find_card_bounds(cv2, image)
     card = _crop_bounds(image, bounds) if bounds else image
     regions = _ocr_regions(card)
-    ocr_text = "\n".join(pytesseract.image_to_string(region) for region in regions).strip()
+    ocr_text = _read_ocr_text(pytesseract, regions)
     candidate = _candidate_from_text(ocr_text)
     if bounds:
         candidate = CardCandidate(
@@ -88,6 +88,18 @@ def _ocr_regions(card):
     top = card[0 : int(height * 0.22), 0:width]
     bottom = card[int(height * 0.68) : height, 0:width]
     return [top, bottom, card]
+
+
+def _read_ocr_text(pytesseract, regions) -> str:
+    try:
+        return "\n".join(pytesseract.image_to_string(region) for region in regions).strip()
+    except Exception as exc:
+        if exc.__class__.__name__ == "TesseractNotFoundError":
+            raise VisionUnavailable(
+                "Tesseract OCR is not installed or is not on PATH. Install Tesseract for Windows, "
+                "then restart this app."
+            ) from exc
+        raise
 
 
 def _candidate_from_text(text: str) -> CardCandidate:

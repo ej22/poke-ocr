@@ -107,7 +107,8 @@ label {
 
 input,
 select,
-button {
+button,
+.button-link {
   min-height: 42px;
   border-radius: 6px;
   border: 1px solid var(--line);
@@ -117,17 +118,32 @@ button {
   font: inherit;
 }
 
-button {
+button,
+.button-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
   background: var(--accent);
   border-color: var(--accent);
   color: #07110b;
   font-weight: 800;
+  text-decoration: none;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.48;
 }
 
 .button-row {
   display: flex;
+  flex-wrap: wrap;
   gap: 10px;
+  margin-top: 12px;
+}
+
+.scan-interval-label {
   margin-top: 12px;
 }
 

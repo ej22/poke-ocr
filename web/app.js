@@ -7,8 +7,16 @@ const catalogMessageEl = document.querySelector("#catalog-message");
 const videoEl = document.querySelector("#camera-preview");
 const canvasEl = document.querySelector("#camera-canvas");
 const cameraMessageEl = document.querySelector("#camera-message");
+const startCameraButton = document.querySelector("#start-camera-button");
+const scanFrameButton = document.querySelector("#scan-frame-button");
+const startAutoScanButton = document.querySelector("#start-auto-scan-button");
+const stopAutoScanButton = document.querySelector("#stop-auto-scan-button");
+const scanIntervalInput = document.querySelector("#scan-interval-input");
 const obsConfigEl = document.querySelector("#obs-config");
 let cameraStream;
+let autoScanTimer;
+let autoScanRunning = false;
+let frameUploadInProgress = false;
 
 async function request(path, options = {}) {
   const response = await fetch(path, {
@@ -49,7 +57,92 @@ async function loadObsConfig() {
   const payload = await request("/api/obs/source-config");
   const config = payload.browser_source;
   document.querySelector("#overlay-url").value = config.url;
+  document.querySelector("#overlay-preview-link").href = config.url;
   obsConfigEl.textContent = JSON.stringify(config, null, 2);
+}
+
+function clampScanInterval(value) {
+  const interval = Number.parseInt(value, 10);
+  if (Number.isNaN(interval)) {
+    return 2500;
+  }
+  return Math.min(10000, Math.max(750, interval));
+}
+
+async function startCamera() {
+  if (cameraStream) {
+    return true;
+  }
+  try {
+    cameraStream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: "environment", width: { ideal: 1280 }, height: { ideal: 720 } },
+      audio: false,
+    });
+    videoEl.srcObject = cameraStream;
+    await videoEl.play();
+    cameraMessageEl.textContent = "Camera ready.";
+    return true;
+  } catch (error) {
+    cameraMessageEl.textContent = `Camera unavailable: ${error.message}`;
+    return false;
+  }
+}
+
+function stopAutoScan() {
+  if (autoScanTimer) {
+    clearInterval(autoScanTimer);
+    autoScanTimer = undefined;
+  }
+  autoScanRunning = false;
+  scanFrameButton.disabled = false;
+  startAutoScanButton.disabled = false;
+  stopAutoScanButton.disabled = true;
+}
+
+function stopCamera() {
+  stopAutoScan();
+  if (cameraStream) {
+    cameraStream.getTracks().forEach((track) => track.stop());
+    cameraStream = undefined;
+    videoEl.srcObject = null;
+  }
+}
+
+async function captureAndScanFrame({ automatic = false } = {}) {
+  if (!cameraStream) {
+    cameraMessageEl.textContent = "Start the camera first.";
+    return;
+  }
+  if (frameUploadInProgress) {
+    return;
+  }
+  frameUploadInProgress = true;
+  try {
+    canvasEl.width = videoEl.videoWidth || 1280;
+    canvasEl.height = videoEl.videoHeight || 720;
+    canvasEl.getContext("2d").drawImage(videoEl, 0, 0, canvasEl.width, canvasEl.height);
+    const image = canvasEl.toDataURL("image/jpeg", 0.82);
+    const payload = await request("/api/scan/frame", {
+      method: "POST",
+      body: JSON.stringify({ image }),
+    });
+    if (payload.error) {
+      cameraMessageEl.textContent = payload.error;
+      if (automatic) {
+        stopAutoScan();
+      }
+    } else {
+      cameraMessageEl.textContent = automatic ? "Auto scan is running." : "Frame scanned.";
+    }
+    renderStatus({ scan: payload.scan });
+  } catch (error) {
+    cameraMessageEl.textContent = `Scan failed: ${error.message}`;
+    if (automatic) {
+      stopAutoScan();
+    }
+  } finally {
+    frameUploadInProgress = false;
+  }
 }
 
 settingsForm.addEventListener("submit", async (event) => {
@@ -96,38 +189,40 @@ catalogForm.addEventListener("submit", async (event) => {
   await refresh();
 });
 
-document.querySelector("#start-camera-button").addEventListener("click", async () => {
-  try {
-    cameraStream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: "environment", width: { ideal: 1280 }, height: { ideal: 720 } },
-      audio: false,
-    });
-    videoEl.srcObject = cameraStream;
-    await videoEl.play();
-    cameraMessageEl.textContent = "Camera ready.";
-  } catch (error) {
-    cameraMessageEl.textContent = `Camera unavailable: ${error.message}`;
-  }
+startCameraButton.addEventListener("click", async () => {
+  await startCamera();
 });
 
-document.querySelector("#scan-frame-button").addEventListener("click", async () => {
-  if (!cameraStream) {
-    cameraMessageEl.textContent = "Start the camera first.";
+scanFrameButton.addEventListener("click", async () => {
+  await captureAndScanFrame();
+});
+
+startAutoScanButton.addEventListener("click", async () => {
+  if (autoScanRunning) {
     return;
   }
-  canvasEl.width = videoEl.videoWidth || 1280;
-  canvasEl.height = videoEl.videoHeight || 720;
-  canvasEl.getContext("2d").drawImage(videoEl, 0, 0, canvasEl.width, canvasEl.height);
-  const image = canvasEl.toDataURL("image/jpeg", 0.82);
-  const payload = await request("/api/scan/frame", {
-    method: "POST",
-    body: JSON.stringify({ image }),
-  });
-  if (payload.error) {
-    cameraMessageEl.textContent = payload.error;
+  const ready = await startCamera();
+  if (!ready) {
+    return;
   }
-  renderStatus({ scan: payload.scan });
+  const interval = clampScanInterval(scanIntervalInput.value);
+  scanIntervalInput.value = interval;
+  autoScanRunning = true;
+  scanFrameButton.disabled = true;
+  startAutoScanButton.disabled = true;
+  stopAutoScanButton.disabled = false;
+  cameraMessageEl.textContent = "Auto scan is running.";
+  await captureAndScanFrame({ automatic: true });
+  if (!autoScanRunning) {
+    return;
+  }
+  autoScanTimer = setInterval(() => {
+    captureAndScanFrame({ automatic: true });
+  }, interval);
 });
+
+stopAutoScanButton.addEventListener("click", stopAutoScan);
+window.addEventListener("beforeunload", stopCamera);
 
 refresh();
 loadObsConfig();

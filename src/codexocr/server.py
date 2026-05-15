@@ -8,6 +8,7 @@ from pathlib import Path
 from urllib.parse import urlparse
 
 from .obs import build_browser_source_config
+from .config import load_dotenv
 from .database import AppDatabase
 from .scanner import ScanEngine
 from .vision import VisionUnavailable, analyze_frame_data_url
@@ -15,6 +16,7 @@ from .catalog import CatalogError, sync_pokemon_tcg_catalog
 
 ROOT = Path(__file__).resolve().parents[2]
 WEB_ROOT = ROOT / "web"
+load_dotenv(ROOT / ".env")
 
 
 class AppState:

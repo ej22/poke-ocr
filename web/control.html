@@ -53,12 +53,18 @@
         <div class="button-row">
           <button id="start-camera-button" type="button">Start Camera</button>
           <button id="scan-frame-button" type="button">Scan Frame</button>
+          <button id="start-auto-scan-button" type="button">Start Auto Scan</button>
+          <button id="stop-auto-scan-button" type="button" disabled>Stop Auto Scan</button>
         </div>
+        <label class="scan-interval-label">
+          Scan interval
+          <input id="scan-interval-input" type="number" min="750" max="10000" step="250" value="2500" />
+        </label>
         <p id="camera-message" class="muted">Camera frames stay local and are posted only to this service.</p>
       </section>
 
       <section class="panel">
-        <h2>Manual Test Scan</h2>
+        <h2>Sample Test Scan</h2>
         <form id="simulate-form" class="form-grid">
           <label>
             Card name
@@ -76,7 +82,7 @@
             Language
             <input name="language" value="en" />
           </label>
-          <button type="submit">Send Test Frame</button>
+          <button type="submit">Send Sample Scan</button>
         </form>
         <div class="button-row">
           <button id="pause-button" type="button">Pause</button>
@@ -103,6 +109,11 @@
       <section class="panel">
         <h2>OBS Browser Source</h2>
         <input id="overlay-url" readonly value="http://127.0.0.1:8765/overlay" />
+        <div class="button-row">
+          <a id="overlay-preview-link" class="button-link" href="http://127.0.0.1:8765/overlay" target="_blank" rel="noreferrer">
+            Open Overlay Preview
+          </a>
+        </div>
         <pre id="obs-config" class="config-block"></pre>
         <p class="muted">Add this URL as a transparent Browser Source in OBS.</p>
       </section>

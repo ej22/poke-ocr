@@ -1,6 +1,6 @@
 import base64
 
-from codexocr.vision import image_bytes_from_data_url
+from codexocr.vision import VisionUnavailable, image_bytes_from_data_url, _read_ocr_text
 
 
 def test_image_bytes_from_data_url_decodes_base64_image():
@@ -15,3 +15,20 @@ def test_image_bytes_from_data_url_rejects_plain_base64():
         assert "data URL" in str(exc)
     else:
         raise AssertionError("Expected invalid data URL to fail")
+
+
+def test_read_ocr_text_reports_missing_tesseract():
+    class TesseractNotFoundError(RuntimeError):
+        pass
+
+    class FakePytesseract:
+        @staticmethod
+        def image_to_string(region):
+            raise TesseractNotFoundError()
+
+    try:
+        _read_ocr_text(FakePytesseract(), ["region"])
+    except VisionUnavailable as exc:
+        assert "Tesseract OCR" in str(exc)
+    else:
+        raise AssertionError("Expected missing Tesseract to be reported as unavailable vision support")

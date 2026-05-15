@@ -4,7 +4,7 @@ from collections import deque
 
 from .database import AppDatabase
 from .matcher import CardMatcher
-from .models import CardCandidate, ScanResult
+from .models import CardCandidate, CardIdentity, ScanResult
 from .normalize import detect_language, normalize_collector_number
 from .providers import PriceService, ProviderError
 
@@ -47,6 +47,9 @@ class ScanEngine:
 
         matcher = CardMatcher(self.database.list_cards())
         identity, score, alternatives = matcher.match(candidate)
+        if not identity:
+            identity = _identity_from_confident_candidate(candidate)
+            score = max(score, candidate.confidence if identity else score)
         candidate = CardCandidate(
             name=candidate.name,
             set_code=candidate.set_code,
@@ -58,10 +61,16 @@ class ScanEngine:
         )
 
         if not identity:
+            best = alternatives[0] if alternatives else None
+            detail = (
+                f" Best catalog guess: {best['name']} ({best['score']:.2f})."
+                if best and isinstance(best.get("score"), float)
+                else ""
+            )
             self.current = ScanResult(
                 state="ambiguous",
                 candidate=candidate,
-                message="Card candidate is not confident enough yet.",
+                message=f"OCR did not produce a confident card match yet.{detail}",
             )
             return self.current
 
@@ -108,3 +117,23 @@ def _str_or_none(value: object) -> str | None:
         return None
     text = str(value).strip()
     return text or None
+
+
+def _identity_from_confident_candidate(candidate: CardCandidate) -> CardIdentity | None:
+    if candidate.confidence < 0.9:
+        return None
+    if not candidate.name or not candidate.set_code or not candidate.collector_number:
+        return None
+    canonical_id = "manual-" + "-".join(
+        part.lower().replace("/", "-").replace(" ", "-")
+        for part in [candidate.set_code, candidate.collector_number, candidate.name]
+    )
+    return CardIdentity(
+        canonical_id=canonical_id,
+        provider_ids={},
+        name=candidate.name,
+        set_code=candidate.set_code,
+        set_name=candidate.set_name or candidate.set_code,
+        collector_number=candidate.collector_number,
+        language=candidate.language,
+    )
