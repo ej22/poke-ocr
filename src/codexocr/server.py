@@ -9,6 +9,7 @@ from urllib.parse import urlparse
 
 from .database import AppDatabase
 from .scanner import ScanEngine
+from .vision import VisionUnavailable, analyze_frame_data_url
 
 ROOT = Path(__file__).resolve().parents[2]
 WEB_ROOT = ROOT / "web"
@@ -67,6 +68,29 @@ class Handler(BaseHTTPRequestHandler):
             self._json({"scan": STATE.scanner.resume().to_dict()})
         elif path == "/api/scan/simulate":
             self._json({"scan": STATE.scanner.ingest_ocr(payload).to_dict()})
+        elif path == "/api/scan/frame":
+            try:
+                result = analyze_frame_data_url(str(payload.get("image") or ""))
+                scan = STATE.scanner.ingest_ocr(
+                    {
+                        "name": result.candidate.name,
+                        "set_code": result.candidate.set_code,
+                        "collector_number": result.candidate.collector_number,
+                        "language": result.candidate.language,
+                        "confidence": result.candidate.confidence,
+                        "ocr_text": result.ocr_text,
+                        "source": "webcam",
+                    }
+                )
+                self._json({"scan": scan.to_dict(), "vision": {"card_bounds": result.card_bounds}})
+            except VisionUnavailable as exc:
+                STATE.scanner.current = STATE.scanner.current.__class__(
+                    state="vision_unavailable",
+                    message=str(exc),
+                )
+                self._json({"scan": STATE.scanner.current.to_dict(), "error": str(exc)}, HTTPStatus.SERVICE_UNAVAILABLE)
+            except (ValueError, TypeError) as exc:
+                self._json({"error": str(exc)}, HTTPStatus.BAD_REQUEST)
         else:
             self._json({"error": "Not found"}, HTTPStatus.NOT_FOUND)
 

@@ -45,6 +45,19 @@
       </section>
 
       <section class="panel">
+        <h2>Camera</h2>
+        <div class="camera-frame">
+          <video id="camera-preview" playsinline muted></video>
+          <canvas id="camera-canvas" hidden></canvas>
+        </div>
+        <div class="button-row">
+          <button id="start-camera-button" type="button">Start Camera</button>
+          <button id="scan-frame-button" type="button">Scan Frame</button>
+        </div>
+        <p id="camera-message" class="muted">Camera frames stay local and are posted only to this service.</p>
+      </section>
+
+      <section class="panel">
         <h2>Manual Test Scan</h2>
         <form id="simulate-form" class="form-grid">
           <label>

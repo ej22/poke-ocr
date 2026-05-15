@@ -2,6 +2,10 @@ const statusEl = document.querySelector("#scan-state");
 const currentCardEl = document.querySelector("#current-card");
 const settingsForm = document.querySelector("#settings-form");
 const simulateForm = document.querySelector("#simulate-form");
+const videoEl = document.querySelector("#camera-preview");
+const canvasEl = document.querySelector("#camera-canvas");
+const cameraMessageEl = document.querySelector("#camera-message");
+let cameraStream;
 
 async function request(path, options = {}) {
   const response = await fetch(path, {
@@ -67,6 +71,39 @@ document.querySelector("#pause-button").addEventListener("click", async () => {
 document.querySelector("#resume-button").addEventListener("click", async () => {
   await request("/api/scan/resume", { method: "POST", body: "{}" });
   await refresh();
+});
+
+document.querySelector("#start-camera-button").addEventListener("click", async () => {
+  try {
+    cameraStream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: "environment", width: { ideal: 1280 }, height: { ideal: 720 } },
+      audio: false,
+    });
+    videoEl.srcObject = cameraStream;
+    await videoEl.play();
+    cameraMessageEl.textContent = "Camera ready.";
+  } catch (error) {
+    cameraMessageEl.textContent = `Camera unavailable: ${error.message}`;
+  }
+});
+
+document.querySelector("#scan-frame-button").addEventListener("click", async () => {
+  if (!cameraStream) {
+    cameraMessageEl.textContent = "Start the camera first.";
+    return;
+  }
+  canvasEl.width = videoEl.videoWidth || 1280;
+  canvasEl.height = videoEl.videoHeight || 720;
+  canvasEl.getContext("2d").drawImage(videoEl, 0, 0, canvasEl.width, canvasEl.height);
+  const image = canvasEl.toDataURL("image/jpeg", 0.82);
+  const payload = await request("/api/scan/frame", {
+    method: "POST",
+    body: JSON.stringify({ image }),
+  });
+  if (payload.error) {
+    cameraMessageEl.textContent = payload.error;
+  }
+  renderStatus({ scan: payload.scan });
 });
 
 refresh();
