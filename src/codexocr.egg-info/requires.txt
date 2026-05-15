@@ -1,0 +1,8 @@
+
+[dev]
+pytest>=8
+
+[vision]
+opencv-python>=4.9
+pytesseract>=0.3
+Pillow>=10

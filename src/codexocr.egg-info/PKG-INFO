@@ -1,0 +1,11 @@
+Metadata-Version: 2.4
+Name: codexocr
+Version: 0.1.0
+Summary: Pokemon card OCR overlay for OBS Browser Source
+Requires-Python: >=3.11
+Provides-Extra: dev
+Requires-Dist: pytest>=8; extra == "dev"
+Provides-Extra: vision
+Requires-Dist: opencv-python>=4.9; extra == "vision"
+Requires-Dist: pytesseract>=0.3; extra == "vision"
+Requires-Dist: Pillow>=10; extra == "vision"
