@@ -6,6 +6,8 @@
 - Greenfield MVP scaffold is implemented and committed as `8a38415 scaffold desktop overlay app`.
 - Camera/OCR endpoint slice is committed as `251a9f4 add webcam frame ocr endpoint`.
 - Catalog/pricing guard slice is committed as `a5fd507 add card catalog sync and quota guards`.
+- OBS source-config helper slice is committed as `85e7e3c add obs browser source helper`.
+- GitHub repository created at `https://github.com/ej22/poke-ocr` and local `main` tracks `origin/main`.
 - The architecture is a local Python service serving a browser-based OBS overlay and control UI, with an Electron wrapper prepared for desktop packaging.
 - Baseline Python tests pass with the stdlib fallback runner.
 - Browser webcam capture and `/api/scan/frame` are implemented. The frame endpoint gracefully reports `vision_unavailable` when OpenCV/Tesseract extras are not installed.
@@ -52,10 +54,11 @@
 - `curl -s -X POST http://127.0.0.1:8765/api/scan/frame ...` returned the expected `vision_unavailable` response because vision extras are not installed.
 - `python3 tests/run_tests.py` passed after adding catalog mapping/sync tests and quota-exhaustion pricing tests.
 - `python3 tests/run_tests.py` passed after adding OBS source-config tests.
+- `gh auth login -h github.com --git-protocol https --web` completed successfully for GitHub account `ej22`.
+- `gh repo create poke-ocr --private --source . --remote origin --push` created the private repo and pushed `main`.
 
 ## Known Issues / Next Steps
 
-- Commit the OBS source-config helper slice.
 - Install/test the `vision` extra on a machine with OpenCV/Tesseract available.
 - Replace sample catalog with a synced local card index.
 - Add robust PokéWallet response mapping once real API responses are available.
