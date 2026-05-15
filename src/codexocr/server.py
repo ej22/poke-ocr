@@ -10,6 +10,7 @@ from urllib.parse import urlparse
 from .database import AppDatabase
 from .scanner import ScanEngine
 from .vision import VisionUnavailable, analyze_frame_data_url
+from .catalog import CatalogError, sync_pokemon_tcg_catalog
 
 ROOT = Path(__file__).resolve().parents[2]
 WEB_ROOT = ROOT / "web"
@@ -91,6 +92,16 @@ class Handler(BaseHTTPRequestHandler):
                 self._json({"scan": STATE.scanner.current.to_dict(), "error": str(exc)}, HTTPStatus.SERVICE_UNAVAILABLE)
             except (ValueError, TypeError) as exc:
                 self._json({"error": str(exc)}, HTTPStatus.BAD_REQUEST)
+        elif path == "/api/cards/sync":
+            try:
+                summary = sync_pokemon_tcg_catalog(
+                    STATE.database,
+                    query=str(payload.get("query") or "") or None,
+                    max_pages=int(payload.get("pages") or 1),
+                )
+                self._json({"ok": True, "imported": summary.imported, "pages": summary.pages})
+            except (CatalogError, ValueError) as exc:
+                self._json({"ok": False, "error": str(exc)}, HTTPStatus.BAD_GATEWAY)
         else:
             self._json({"error": "Not found"}, HTTPStatus.NOT_FOUND)
 

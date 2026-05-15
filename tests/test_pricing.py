@@ -1,6 +1,6 @@
 from codexocr.database import AppDatabase
 from codexocr.models import CardIdentity, PriceSnapshot, QuotaState
-from codexocr.providers import PriceService, PricingResult
+from codexocr.providers import PriceService, PricingResult, ProviderError
 
 
 class FakeProvider:
@@ -54,3 +54,35 @@ def test_price_service_caches_provider_results(tmp_path):
     assert second.snapshot.cache_status == "cache"
     assert provider.calls == 1
     assert second.quota.hourly_remaining == 99
+
+
+def test_price_service_blocks_live_fetch_when_quota_is_exhausted(tmp_path):
+    database = AppDatabase(tmp_path / "test.sqlite")
+    identity = CardIdentity(
+        canonical_id="swsh3-020",
+        provider_ids={"pokewallet": "pk_sample"},
+        name="Charizard VMAX",
+        set_code="SWSH3",
+        set_name="Darkness Ablaze",
+        collector_number="20/189",
+        language="en",
+    )
+    database.set_quota(
+        QuotaState(
+            provider="pokewallet",
+            hourly_limit=100,
+            hourly_remaining=0,
+            daily_limit=1000,
+            daily_remaining=900,
+        )
+    )
+    provider = FakeProvider()
+
+    try:
+        PriceService(database, provider).get_price(identity)
+    except ProviderError as exc:
+        assert "quota" in str(exc).lower()
+    else:
+        raise AssertionError("Expected exhausted quota to block live fetch")
+
+    assert provider.calls == 0

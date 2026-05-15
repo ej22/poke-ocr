@@ -87,6 +87,8 @@ class PriceService:
         quota = self.database.get_quota(self.provider.provider_name)
         if cached:
             return PricingResult(snapshot=cached, quota=quota)
+        if quota and (quota.hourly_remaining == 0 or quota.daily_remaining == 0):
+            raise ProviderError("PokéWallet quota limit reached; using cached prices only.")
         result = self.provider.fetch_price(identity)
         self.database.cache_price(cache_key, result.snapshot)
         if result.quota:

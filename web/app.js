@@ -2,6 +2,8 @@ const statusEl = document.querySelector("#scan-state");
 const currentCardEl = document.querySelector("#current-card");
 const settingsForm = document.querySelector("#settings-form");
 const simulateForm = document.querySelector("#simulate-form");
+const catalogForm = document.querySelector("#catalog-form");
+const catalogMessageEl = document.querySelector("#catalog-message");
 const videoEl = document.querySelector("#camera-preview");
 const canvasEl = document.querySelector("#camera-canvas");
 const cameraMessageEl = document.querySelector("#camera-message");
@@ -70,6 +72,19 @@ document.querySelector("#pause-button").addEventListener("click", async () => {
 
 document.querySelector("#resume-button").addEventListener("click", async () => {
   await request("/api/scan/resume", { method: "POST", body: "{}" });
+  await refresh();
+});
+
+catalogForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  catalogMessageEl.textContent = "Syncing card index...";
+  const payload = await request("/api/cards/sync", {
+    method: "POST",
+    body: JSON.stringify(readForm(catalogForm)),
+  });
+  catalogMessageEl.textContent = payload.ok
+    ? `Imported ${payload.imported} cards from ${payload.pages} page(s).`
+    : payload.error;
   await refresh();
 });
 
