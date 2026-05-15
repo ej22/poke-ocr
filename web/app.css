@@ -151,6 +151,19 @@ video {
   width: 100%;
 }
 
+.config-block {
+  overflow: auto;
+  max-height: 180px;
+  margin: 12px 0 0;
+  padding: 12px;
+  background: #090d12;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
 .overlay-shell {
   width: 100vw;
   height: 100vh;

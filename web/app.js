@@ -7,6 +7,7 @@ const catalogMessageEl = document.querySelector("#catalog-message");
 const videoEl = document.querySelector("#camera-preview");
 const canvasEl = document.querySelector("#camera-canvas");
 const cameraMessageEl = document.querySelector("#camera-message");
+const obsConfigEl = document.querySelector("#obs-config");
 let cameraStream;
 
 async function request(path, options = {}) {
@@ -42,6 +43,13 @@ function renderStatus(payload) {
 
 async function refresh() {
   renderStatus(await request("/api/status"));
+}
+
+async function loadObsConfig() {
+  const payload = await request("/api/obs/source-config");
+  const config = payload.browser_source;
+  document.querySelector("#overlay-url").value = config.url;
+  obsConfigEl.textContent = JSON.stringify(config, null, 2);
 }
 
 settingsForm.addEventListener("submit", async (event) => {
@@ -122,4 +130,5 @@ document.querySelector("#scan-frame-button").addEventListener("click", async () 
 });
 
 refresh();
+loadObsConfig();
 setInterval(refresh, 1500);

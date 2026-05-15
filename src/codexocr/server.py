@@ -7,6 +7,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import urlparse
 
+from .obs import build_browser_source_config
 from .database import AppDatabase
 from .scanner import ScanEngine
 from .vision import VisionUnavailable, analyze_frame_data_url
@@ -49,6 +50,15 @@ class Handler(BaseHTTPRequestHandler):
                     "settings": _public_settings(),
                     "quota": _quota_dict(),
                     "cards": [card.to_dict() for card in STATE.database.list_cards()],
+                }
+            )
+        elif path == "/api/obs/source-config":
+            self._json(
+                {
+                    "browser_source": build_browser_source_config(
+                        host=os.getenv("CODEXOCR_HOST", "127.0.0.1"),
+                        port=int(os.getenv("CODEXOCR_PORT", "8765")),
+                    ).to_dict()
                 }
             )
         else:
