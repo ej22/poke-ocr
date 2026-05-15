@@ -1,0 +1,15 @@
+{
+  "name": "codexocr-pokemon-overlay",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Pokemon card OCR pricing overlay for OBS Browser Source",
+  "main": "electron/main.js",
+  "scripts": {
+    "start:service": "python -m codexocr.server",
+    "test": "python -m pytest",
+    "electron": "electron ."
+  },
+  "devDependencies": {
+    "electron": "^31.0.0"
+  }
+}

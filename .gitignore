@@ -1,0 +1,30 @@
+.DS_Store
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.venv/
+venv/
+
+# Node / Electron
+node_modules/
+dist/
+build/
+out/
+
+# Local app state and generated data
+data/*.sqlite
+data/*.sqlite-*
+data/cache/
+logs/
+captures/
+*.log
+
+# Secrets
+secrets.json
+settings.local.json

@@ -1,0 +1,32 @@
+SAMPLE_CARDS = [
+    {
+        "canonical_id": "swsh3-020",
+        "pokewallet_id": "pk_sample_charizard_vmax",
+        "name": "Charizard VMAX",
+        "set_code": "SWSH3",
+        "set_name": "Darkness Ablaze",
+        "collector_number": "20/189",
+        "language": "en",
+        "image_url": "https://images.pokemontcg.io/swsh3/20_hires.png",
+    },
+    {
+        "canonical_id": "sv1-198",
+        "pokewallet_id": "pk_sample_miriam",
+        "name": "Miriam",
+        "set_code": "SV1",
+        "set_name": "Scarlet & Violet",
+        "collector_number": "198/198",
+        "language": "en",
+        "image_url": "https://images.pokemontcg.io/sv1/198_hires.png",
+    },
+    {
+        "canonical_id": "base1-004",
+        "pokewallet_id": "pk_sample_charizard_base",
+        "name": "Charizard",
+        "set_code": "BASE1",
+        "set_name": "Base Set",
+        "collector_number": "4/102",
+        "language": "en",
+        "image_url": "https://images.pokemontcg.io/base1/4_hires.png",
+    },
+]

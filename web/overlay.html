@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>CodexOCR Overlay</title>
+    <link rel="stylesheet" href="/static/app.css" />
+  </head>
+  <body class="overlay-shell">
+    <main id="overlay-card" class="overlay-card compact">
+      <div class="overlay-main">
+        <p id="overlay-state" class="eyebrow">Waiting</p>
+        <h1 id="overlay-name">No card detected</h1>
+        <p id="overlay-meta">Hold a card in view</p>
+      </div>
+      <div class="overlay-price">
+        <span id="overlay-price">--</span>
+        <small id="overlay-source">cache ready</small>
+      </div>
+    </main>
+    <script src="/static/overlay.js"></script>
+  </body>
+</html>
