@@ -14,6 +14,7 @@
 - Webcam OCR setup on Windows: install Python vision extras with `python -m pip install -e ".[vision]"`, install Tesseract with `winget install --id UB-Mannheim.TesseractOCR`, reopen PowerShell, verify with `tesseract --version`, then restart the service. Manual installer fallback: `https://github.com/UB-Mannheim/tesseract/wiki`; default PATH folder is `C:\Program Files\Tesseract-OCR`.
 - Sample Test Scan can now price high-confidence manually entered cards that are not in the local catalog by creating a temporary `CardIdentity` from typed name, set code, collector number, and language, then using PokéWallet search. Verified scenario: Aurorus, POR, 024/088, English.
 - Control UI now includes an **Open Overlay Preview** link in the OBS Browser Source panel; the overlay itself is still served at `/overlay` and must be opened in a browser tab or added to OBS as a Browser Source.
+- Webcam OCR now uses explicit Tesseract `--psm`/`--oem` settings per crop, OCR-only crop preprocessing, quad-based card detection, filtered set-code extraction, and filtered card-name extraction.
 - Pokémon TCG catalog sync and quota-aware pricing guards are implemented.
 - OBS Browser Source configuration helper is implemented.
 
@@ -32,6 +33,11 @@
 - Pokémon TCG catalog entries map into the same `CardIdentity` model as sample cards, keeping matcher/overlay contracts stable.
 - `PriceService` checks cached prices before quota state, then blocks live PokéWallet calls if hourly or daily remaining quota is zero.
 - OBS helper returns the exact Browser Source URL and recommended transparent 1920x1080 settings for manual setup.
+- Webcam OCR keeps original frames/crops untouched for card-bound detection, then preprocesses OCR crops with greyscale conversion, 2x cubic upscaling, adaptive Gaussian thresholding, and mild sharpening before Tesseract.
+- Tesseract reads the top and bottom crops with single-line mode (`--psm 7 --oem 3`) and the full-card fallback crop with automatic page segmentation (`--psm 3 --oem 3`).
+- Card boundary detection now looks for four-point contours with Pokémon-card-like aspect ratio (`1.35`-`1.45`) and area above 8% of the frame. If no card-shaped quad is found, `/api/scan/frame` returns a low-confidence no-bounds OCR result instead of running OCR over the whole frame.
+- Set code extraction is constrained to the bottom OCR crop and filters known OCR false positives such as `HP`, `GX`, `EX`, `VMAX`, `VSTAR`, `TAG`, `TEAM`, `FULL`, `CARD`, `ART`, `ITEM`, and `TOOL`.
+- Name extraction skips short, numeric, HP, and standalone rarity/noise lines before selecting the first plausible card-name line.
 
 ## Files/Areas Created
 
@@ -42,6 +48,7 @@
 - Electron wrapper under `electron/`.
 - Tests under `tests/`, including `tests/run_tests.py` for environments without pytest.
 - `src/codexocr/vision.py` for data URL parsing and optional OCR analysis.
+- `src/codexocr/vision.py` includes OCR helpers `_read_ocr_text`, `_preprocess_region`, `_is_possible_card_name`, bottom-crop-aware `_candidate_from_text`, and quad-based `_find_card_bounds`.
 - `src/codexocr/catalog.py` for Pokémon TCG API card sync.
 - `/api/scan/frame` endpoint for browser-captured webcam frames.
 - `/api/cards/sync` endpoint and control UI form for card index import.
@@ -64,6 +71,7 @@
 - `python -m compileall src tests` passed after the same changes.
 - `node --check web\app.js` passed after adding continuous browser auto-scan controls.
 - `python tests\run_tests.py` passed after adding continuous browser auto-scan controls.
+- `python3 tests/run_tests.py` passed after adding OCR preprocessing, set-code filtering, name filtering, and no-card-bound synthetic tests. OpenCV/NumPy-specific tests skip cleanly when the optional vision extra is not installed.
 - `gh auth login -h github.com --git-protocol https --web` completed successfully for GitHub account `ej22`.
 - `gh repo create poke-ocr --private --source . --remote origin --push` created the private repo and pushed `main`.
 
